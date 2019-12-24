@@ -1,0 +1,79 @@
+library(OutlierDetection)
+library(OutliersO3)
+library(dplyr)
+library(quantmod)
+###################################
+#Create datasets
+X=iris[,1:4]
+S<-X %>% mutate(species=as.numeric(iris$Species))
+
+###################################
+###################################
+#Outlier detection
+maha(X,cutoff=0.95)
+#16  42 107 115 118 132 135 136 142
+maha(S,cutoff=0.95)
+#42 107 115 118 130 132 135 142
+###################################
+###################################
+dens(X,k=4,C=1,cutoff=0.95,boottimes=1000)
+#23  42  63 107 110
+dens(S,k=4,C=1,cutoff=0.95,boottimes=1000)
+#23  42  63 107 110
+###################################
+###################################
+depthout(X,cutoff=0.05,boottimes=1000)
+#110 118 119 132
+depthout(S,cutoff=0.05,boottimes=1000)
+#42 110 118 119 132
+###################################
+###################################
+disp(X,cutoff=0.95)
+#118 132 135 142
+disp(S,cutoff=0.95)
+#107 118 132 135 142
+###################################
+###################################
+OutlierDetection(X)
+#16  42 107 115 118 132 135 136 142
+PCOutlierDetection(X)
+#16 101 107 118 123 132 137
+###################################
+###################################
+###################################
+#library(dplyr)
+library(quantmod)
+library(OutlierDetection)
+###################################
+#get sp500 index data
+getSymbols('^gspc', src = 'yahoo',from = '2000-01-01')
+plot(GSPC$GSPC.Adjusted,col="red")
+
+SP500_Mon<-to.monthly(Ad(GSPC),indexAt = "month", OHLC = F)
+plot(SP500_Mon,main="SP500_Monthly",col="red")
+SP500_Monthly_Returns<- na.omit(diff(log(SP500_Mon)))
+plot(SP500_Monthly_Returns,col="blue",lwd=0.7,ylim=c(-0.2,0.2),main="SP500_Monthly_Returns")
+#df_ret<-as.data.frame(SP500_Monthly_Returns)
+###################################
+#Outlier detection using k Nearest Neighbours
+nn_out_det<-nn(SP500_Monthly_Returns,cutoff=0.95,k=5,boottimes=1000)
+#Rows:2,32,94,105,109,111,127,141
+###################################
+#Outlier detection using density method
+dens_out_det<-dens(SP500_Monthly_Returns,cutoff=0.95,k=5,boottimes=1000)
+#Rows:26,32,48,82,105,109,141,236
+###################################
+#Outlier detection using Mahalanobis Distance 
+maha_out_det<-maha(SP500_Monthly_Returns,cutoff=0.95)
+#Rows:2,10,13,20,32,101,104,105,108,109,124,141,227
+
+maha_out_det
+plot(SP500_Monthly_Returns,col="blue",lwd=1.5,ylim=c(-0.2,0.2),main="SP500_Monthly_Return_Outliers")
+points(maha_out_det$`Outlier Observations`$GSPC.Adjusted,col="red",lwd=2.5)
+
+###################################
+uv<-UnivariateOutlierDetection(SP500_Monthly_Returns)
+uv
+
+plot(SP500_Monthly_Returns,col="blue",lwd=0.5,ylim=c(-0.2,0.2),"Univariate Method")
+points(uv$`Scatter plot`$plot_env$Out,col="red",lwd=2)
